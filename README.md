@@ -25,8 +25,9 @@ npm run dev
 npm test
 ```
 
-`npm test` does not need your `.env` or any external database; it runs
-against a temporary in-memory MongoDB.
+`npm test` uses the same `MONGO_URI` from your `.env`. Each test run creates
+its own temporary database on that cluster and deletes it when it finishes,
+so it never touches the data you use with `npm run dev`.
 
 ## Database connection
 
@@ -35,11 +36,8 @@ git-ignored) with:
 
 ```
 PORT=4000
-MONGO_URI=<your own MongoDB connection string>
+MONGO_URI=__SET_MONGO_URI__
 ```
-
-Use your own MongoDB instance (local or Atlas). Never commit `.env` or any
-credentials.
 
 ## What you need to build
 
@@ -110,7 +108,7 @@ Implement the six exported controller functions and wire them in
 `npm test` runs ten equally weighted functional checks (one point each) and
 prints `Functional grade: X/10`. The tests in `server/tests/` are visible
 and are the source of truth for the required behavior. The same tests run
-in GitHub Actions on your pull request.
+in GitHub Actions on your pull request, against the same database cluster.
 
 ## Submission
 

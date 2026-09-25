@@ -1,7 +1,8 @@
+import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
 import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../src/app.js';
 import { Feedback } from '../src/models/Feedback.js';
 import { graded, printReport } from './rubric.js';
@@ -9,12 +10,15 @@ import { graded, printReport } from './rubric.js';
 const BASE = '/api/feedback';
 const REQUEST_TIMEOUT_MS = 5000;
 
-let mongo;
+// Each run uses its own throwaway database on the MONGO_URI cluster and drops
+// it afterwards, so parallel runs never touch each other's data.
+const RUN_DB = `grade_${process.env.GITHUB_RUN_ID || 'local'}_${Date.now()}_${randomBytes(3).toString('hex')}`;
 
 beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  await mongoose.connect(mongo.getUri(), { autoIndex: true });
-}, 180000);
+  if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not set (see README "Database connection")');
+  await mongoose.connect(process.env.MONGO_URI, { dbName: RUN_DB, autoIndex: true });
+  await Feedback.init();
+}, 60000);
 
 beforeEach(async () => {
   const collections = await mongoose.connection.db.collections();
@@ -25,8 +29,10 @@ beforeEach(async () => {
 
 afterAll(async () => {
   printReport();
+  if (mongoose.connection.readyState === 1) {
+    await mongoose.connection.dropDatabase().catch(() => {});
+  }
   await mongoose.disconnect();
-  if (mongo) await mongo.stop();
 });
 
 // ---------- helpers ----------
