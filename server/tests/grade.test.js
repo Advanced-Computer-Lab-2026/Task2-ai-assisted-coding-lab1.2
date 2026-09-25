@@ -10,13 +10,37 @@ import { graded, printReport } from './rubric.js';
 const BASE = '/api/feedback';
 const REQUEST_TIMEOUT_MS = 5000;
 
-// Each run uses its own throwaway database on the MONGO_URI cluster and drops
-// it afterwards, so parallel runs never touch each other's data.
+// Each run uses its own throwaway database on the MONGO_URI cluster, so parallel
+// runs never touch each other's data. The shared account is not allowed to drop
+// a database, so cleanup drops the run's collections instead: a MongoDB
+// database with no collections no longer exists. A run that dies before its
+// cleanup leaves its database behind, so every run first sweeps grade_
+// databases older than STALE_AFTER_MS, dated by the timestamp in their name.
 const RUN_DB = `grade_${process.env.GITHUB_RUN_ID || 'local'}_${Date.now()}_${randomBytes(3).toString('hex')}`;
+const GRADE_DB = /^grade_[^_]+_(\d{13})_[0-9a-f]{6}$/;
+const STALE_AFTER_MS = 60 * 60 * 1000;
+
+async function dropAllCollections(db) {
+  const collections = await db.listCollections({}, { nameOnly: true }).toArray();
+  for (const { name } of collections) {
+    await db.dropCollection(name).catch(() => {});
+  }
+}
+
+async function sweepStaleRunDatabases() {
+  const client = mongoose.connection.getClient();
+  const { databases } = await client.db().admin().listDatabases({ nameOnly: true });
+  const cutoff = Date.now() - STALE_AFTER_MS;
+  for (const { name } of databases) {
+    const match = GRADE_DB.exec(name);
+    if (match && Number(match[1]) < cutoff) await dropAllCollections(client.db(name));
+  }
+}
 
 beforeAll(async () => {
   if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not set (see README "Database connection")');
-  await mongoose.connect(process.env.MONGO_URI, { dbName: RUN_DB, autoIndex: true });
+  await mongoose.connect(process.env.MONGO_URI, { dbName: RUN_DB, autoIndex: true, maxPoolSize: 2 });
+  await sweepStaleRunDatabases().catch((err) => console.warn('Stale grade_ database sweep skipped:', err.message));
   await Feedback.init();
 }, 60000);
 
@@ -30,7 +54,7 @@ beforeEach(async () => {
 afterAll(async () => {
   printReport();
   if (mongoose.connection.readyState === 1) {
-    await mongoose.connection.dropDatabase().catch(() => {});
+    await dropAllCollections(mongoose.connection.db).catch(() => {});
   }
   await mongoose.disconnect();
 });
