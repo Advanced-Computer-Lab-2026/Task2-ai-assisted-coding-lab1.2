@@ -4,7 +4,8 @@ import { Feedback } from '../models/Feedback.js';
 // TODO: implement per README.md section 2.
 export async function getAllFeedbacks(req, res, next) {
   try {
-    // TODO
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    res.json({ feedbacks });
   } catch (err) { next(err); }
 }
 
@@ -12,7 +13,9 @@ export async function getAllFeedbacks(req, res, next) {
 // TODO: implement per README.md section 2.
 export async function getFeedback(req, res, next) {
   try {
-    // TODO
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+    res.json({ feedback });
   } catch (err) { next(err); }
 }
 
@@ -20,7 +23,8 @@ export async function getFeedback(req, res, next) {
 // TODO: implement per README.md section 2.
 export async function createFeedback(req, res, next) {
   try {
-    // TODO
+    const feedback = await Feedback.create(req.body);
+    res.status(201).json({ feedback });
   } catch (err) { next(err); }
 }
 
@@ -28,6 +32,18 @@ export async function createFeedback(req, res, next) {
 // TODO: implement per README.md section 3.
 export async function getFeedbackSummary(req, res, next) {
   try {
-    // TODO
+    const { eventCode } = req.query;
+    if (!eventCode) return res.status(400).json({ message: 'eventCode is required' });
+
+    const [summary] = await Feedback.aggregate([
+      { $match: { eventCode } },
+      { $group: { _id: '$eventCode', averageScore: { $avg: '$score' }, feedbackCount: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      eventCode,
+      averageScore: summary?.averageScore ?? 0,
+      feedbackCount: summary?.feedbackCount ?? 0
+    });
   } catch (err) { next(err); }
 }
