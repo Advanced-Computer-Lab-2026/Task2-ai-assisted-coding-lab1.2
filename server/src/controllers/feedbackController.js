@@ -1,5 +1,5 @@
-import { Feedback } from '../models/Feedback.js';
 import Joi from 'joi';
+import { Feedback } from '../models/Feedback.js';
 
 const createSchema = Joi.object({
   eventCode: Joi.string().required(),
