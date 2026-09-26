@@ -1,33 +1,67 @@
-import { Feedback } from '../models/Feedback.js';
+import Feedback from '../models/Feedback.js';
 
-// GET /api/feedback
-// TODO: implement per README.md section 2.
-export async function getAllFeedbacks(req, res, next) {
+export const createFeedback = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const feedback = await Feedback.create(req.body);
+    res.status(201).json({ feedback });
+  } catch (err) {
+    next(err);
+  }
+};
 
-// GET /api/feedback/:id
-// TODO: implement per README.md section 2.
-export async function getFeedback(req, res, next) {
+export const getAllFeedbacks = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const feedbacks = await Feedback.find();
+    res.status(200).json({ feedbacks });
+  } catch (err) {
+    next(err);
+  }
+};
 
-// POST /api/feedback
-// TODO: implement per README.md section 2.
-export async function createFeedback(req, res, next) {
+export const getFeedbackSummary = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const { eventCode } = req.query;
+    if (!eventCode) {
+      return res.status(400).json({ message: 'eventCode is required' });
+    }
 
-// GET /api/feedback/summary?eventCode=EV101
-// TODO: implement per README.md section 3.
-export async function getFeedbackSummary(req, res, next) {
+    const summary = await Feedback.aggregate([
+      { $match: { eventCode } },
+      {
+        $group: {
+          _id: '$eventCode',
+          averageScore: { $avg: '$score' },
+          feedbackCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    if (summary.length === 0) {
+      return res.status(200).json({
+        eventCode,
+        averageScore: 0,
+        feedbackCount: 0
+      });
+    }
+
+    res.status(200).json({
+      eventCode: summary[0]._id,
+      averageScore: summary[0].averageScore,
+      feedbackCount: summary[0].feedbackCount
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getFeedback = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ message: 'Feedback not found' });
+    }
+    res.status(200).json({ feedback });
+  } catch (err) {
+    next(err);
+  }
+};
