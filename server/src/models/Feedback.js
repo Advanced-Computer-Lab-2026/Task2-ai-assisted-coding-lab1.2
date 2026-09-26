@@ -4,7 +4,25 @@ import mongoose from 'mongoose';
 
 const feedbackSchema = new mongoose.Schema(
   {
-    // TODO
+    eventCode: {
+      type: String,
+      required: true,
+    },
+    score: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    
   },
   { timestamps: true }
 );
