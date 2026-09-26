@@ -8,6 +8,10 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+router.get('/', getAllFeedbacks);
+// Registered before '/:id' so the literal path is not captured by the id param.
+router.get('/summary', getFeedbackSummary);
+router.get('/:id', getFeedback);
+router.post('/', createFeedback);
 
 export default router;
