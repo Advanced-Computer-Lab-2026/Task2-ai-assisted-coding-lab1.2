@@ -11,21 +11,21 @@ const createSchema = Joi.object({
 // GET /api/feedback
 export async function getAllFeedbacks(req, res, next) {
   try {
-    const feedbacks = await Feedback.find().sort({ createdAt: -1 }).lean();
-    res.json({ feedbacks });
+    const feedbacks = await Feedback.find({}, { __v: 0 }).sort({ createdAt: -1 }).lean();
+    return res.json({ feedbacks });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
 // GET /api/feedback/:id
 export async function getFeedback(req, res, next) {
   try {
-    const feedback = await Feedback.findById(req.params.id).lean();
+    const feedback = await Feedback.findById(req.params.id, { __v: 0 }).lean();
     if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
-    res.json({ feedback });
+    return res.json({ feedback });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -36,16 +36,16 @@ export async function createFeedback(req, res, next) {
     if (error) return res.status(400).json({ message: error.message });
 
     const feedback = await Feedback.create(value);
-    res.status(201).json({ feedback: feedback.toObject() });
+    return res.status(201).json({ feedback: feedback.toObject({ versionKey: false }) });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
 // GET /api/feedback/summary?eventCode=EV101
 export async function getFeedbackSummary(req, res, next) {
   try {
-    const eventCode = req.query.eventCode;
+    const eventCode = String(req.query.eventCode ?? '').trim();
     if (!eventCode) {
       return res.status(400).json({ message: 'eventCode is required' });
     }
@@ -65,12 +65,12 @@ export async function getFeedbackSummary(req, res, next) {
       return res.json({ eventCode, averageScore: 0, feedbackCount: 0 });
     }
 
-    res.json({
+    return res.json({
       eventCode,
       averageScore: Number(summary.averageScore),
       feedbackCount: summary.feedbackCount
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
