@@ -1,33 +1,82 @@
-import { Feedback } from '../models/Feedback.js';
+import Joi from 'joi';
+import Feedback from '../models/Feedback.js';
 
-// GET /api/feedback
-// TODO: implement per README.md section 2.
-export async function getAllFeedbacks(req, res, next) {
-  try {
-    // TODO
-  } catch (err) { next(err); }
-}
+const createFeedbackSchema = Joi.object({
+  eventCode: Joi.string().required(),
+  score: Joi.number().integer().min(1).max(5).required(),
+  comment: Joi.string().optional(),
+  submittedBy: Joi.string().hex().length(24).optional()
+});
 
-// GET /api/feedback/:id
-// TODO: implement per README.md section 2.
-export async function getFeedback(req, res, next) {
+export const createFeedback = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const { error, value } = createFeedbackSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
 
-// POST /api/feedback
-// TODO: implement per README.md section 2.
-export async function createFeedback(req, res, next) {
-  try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const feedback = await Feedback.create(value);
+    res.status(201).json({ feedback });
+  } catch (err) {
+    next(err);
+  }
+};
 
-// GET /api/feedback/summary?eventCode=EV101
-// TODO: implement per README.md section 3.
-export async function getFeedbackSummary(req, res, next) {
+export const getAllFeedbacks = async (req, res, next) => {
   try {
-    // TODO
-  } catch (err) { next(err); }
-}
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    res.status(200).json({ feedbacks });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getFeedback = async (req, res, next) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ message: 'Feedback not found' });
+    }
+    res.status(200).json({ feedback });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getFeedbackSummary = async (req, res, next) => {
+  try {
+    const { eventCode } = req.query;
+
+    if (!eventCode) {
+      return res.status(400).json({ message: 'eventCode is required' });
+    }
+
+    const results = await Feedback.aggregate([
+      { $match: { eventCode } },
+      {
+        $group: {
+          _id: null,
+          averageScore: { $avg: '$score' },
+          feedbackCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    if (results.length === 0) {
+      return res.status(200).json({
+        eventCode,
+        averageScore: 0,
+        feedbackCount: 0
+      });
+    }
+
+    const { averageScore, feedbackCount } = results[0];
+    res.status(200).json({
+      eventCode,
+      averageScore,
+      feedbackCount
+    });
+  } catch (err) {
+    next(err);
+  }
+};
