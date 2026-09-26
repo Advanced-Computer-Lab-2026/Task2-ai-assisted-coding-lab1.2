@@ -33,6 +33,4 @@ feedbackSchema.index(
   { unique: true }
 );
 
-const Feedback = mongoose.model('Feedback', feedbackSchema);
-
-export default Feedback;
+export const Feedback = mongoose.model('Feedback', feedbackSchema);
