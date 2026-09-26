@@ -1,14 +1,30 @@
 import mongoose from 'mongoose';
 
-// TODO: define the Feedback schema per README.md section 1.
-
-const feedbackSchema = new mongoose.Schema(
-  {
-    // TODO
+const feedbackSchema = new mongoose.Schema({
+  eventCode: {
+    type: String,
+    required: true,
+    trim: true
   },
-  { timestamps: true }
-);
+  score: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5
+  },
+  comment: {
+    type: String,
+    trim: true
+  },
+  submittedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
+}, {
+  timestamps: true
+});
 
-// TODO: add the compound uniqueness constraint described in README.md section 1.
+// Prevent duplicate feedback per user per event
+feedbackSchema.index({ eventCode: 1, submittedBy: 1 }, { unique: true });
 
 export const Feedback = mongoose.model('Feedback', feedbackSchema);
