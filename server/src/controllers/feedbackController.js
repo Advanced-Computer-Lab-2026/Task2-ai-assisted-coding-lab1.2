@@ -7,7 +7,7 @@ export async function getAllFeedbacks(req, res, next) {
     // TODO
     const feedbacks = await Feedback.find().populate('submittedBy');
 
-    res.status(200).json({ feedback });
+    res.status(200).json({ feedbacks });
   } catch (err) { next(err); }
 }
 
@@ -43,27 +43,13 @@ export async function createFeedback(req, res, next) {
 export async function getFeedbackSummary(req, res, next) {
   try {
     // TODO
-     const { eventCode } = req.query;
+      const { eventCode } = req.query;
 
     if (!eventCode) {
       return res.status(400).json({
         message: 'eventCode is required',
       });
     }
-    
-    if (summary.length === 0) {
-  return res.status(200).json({
-    eventCode,
-    averageScore: 0,
-    feedbackCount: 0,
-  });
-}
-
-res.status(200).json({
-  eventCode: summary[0]._id,
-  averageScore: summary[0].averageScore,
-  feedbackCount: summary[0].feedbackCount,
-});
 
     const summary = await Feedback.aggregate([
       {
@@ -78,6 +64,18 @@ res.status(200).json({
       },
     ]);
 
-    res.status(200).json(summary);
+    if (summary.length === 0) {
+      return res.status(200).json({
+        eventCode,
+        averageScore: 0,
+        feedbackCount: 0,
+      });
+    }
+
+    res.status(200).json({
+      eventCode: summary[0]._id,
+      averageScore: summary[0].averageScore,
+      feedbackCount: summary[0].feedbackCount,
+    });
   } catch (err) { next(err); }
 }
