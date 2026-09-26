@@ -8,6 +8,11 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// /summary must be declared BEFORE /:id, or Express treats "summary" as an id.
+router.get('/summary', getFeedbackSummary);
+
+router.get('/', getAllFeedbacks);
+router.post('/', createFeedback);
+router.get('/:id', getFeedback);
 
 export default router;
