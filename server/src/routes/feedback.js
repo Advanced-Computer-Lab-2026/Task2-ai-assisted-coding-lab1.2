@@ -3,11 +3,21 @@ import {
   getAllFeedbacks,
   getFeedback,
   createFeedback,
-  getFeedbackSummary
+  getFeedbackSummary,
 } from '../controllers/feedbackController.js';
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// GET /api/feedback
+router.get('/', getAllFeedbacks);
+
+// GET /api/feedback/summary (Must be before /:id)
+router.get('/summary', getFeedbackSummary);
+
+// GET /api/feedback/:id
+router.get('/:id', getFeedback);
+
+// POST /api/feedback
+router.post('/', createFeedback);
 
 export default router;
