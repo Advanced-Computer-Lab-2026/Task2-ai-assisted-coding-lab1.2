@@ -8,6 +8,15 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// 1. GET /api/feedback/summary (Must be before /:id)
+router.get('/summary', getFeedbackSummary);
+
+// 2. GET and POST for /api/feedback
+router.route('/')
+  .get(getAllFeedbacks)
+  .post(createFeedback);
+
+// 3. GET /api/feedback/:id
+router.get('/:id', getFeedback);
 
 export default router;

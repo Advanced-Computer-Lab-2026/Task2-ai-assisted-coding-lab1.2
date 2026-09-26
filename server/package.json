@@ -5,17 +5,18 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "grade": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --verbose"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "joi": "^17.12.3",
     "mongoose": "^8.6.0",
-    "morgan": "^1.10.0",
-    "joi": "^17.12.3"
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
